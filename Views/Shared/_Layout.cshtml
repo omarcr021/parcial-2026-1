@@ -1,3 +1,5 @@
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -31,6 +33,17 @@
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Solicitudes" asp-action="Index">Mis Solicitudes</a>
                             </li>
+
+                            var ultimaSolicitudId = HttpContextAccessor.HttpContext?.Session.GetInt32("UltimaSolicitudId");
+                            var ultimaSolicitudInfo = HttpContextAccessor.HttpContext?.Session.GetString("UltimaSolicitudInfo");
+                            if (ultimaSolicitudId.HasValue && !string.IsNullOrEmpty(ultimaSolicitudInfo))
+                            {
+                                <li class="nav-item ms-lg-3">
+                                    <a class="nav-link text-info fw-bold" asp-area="" asp-controller="Solicitudes" asp-action="Details" asp-route-id="@ultimaSolicitudId">
+                                        <i class="bi bi-clock-history"></i> @ultimaSolicitudInfo
+                                    </a>
+                                </li>
+                            }
                         }
                     </ul>
                     <partial name="_LoginPartial" />
