@@ -46,7 +46,7 @@ Para desplegar en Render como Web Service, debes configurar las siguientes varia
 
 ## URL de Render
 
-
+https://parcial-2026-1-dyln.onrender.com
 
 ## Usuarios Iniciales (Seeding)
 
