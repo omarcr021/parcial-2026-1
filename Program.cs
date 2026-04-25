@@ -13,6 +13,17 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 var redisConn = builder.Configuration["Redis:ConnectionString"] ?? builder.Configuration.GetConnectionString("RedisConnection");
 if (!string.IsNullOrEmpty(redisConn))
 {
+    // StackExchange.Redis requiere host:port, pero Render provee redis://host:port o rediss://host:port
+    if (redisConn.StartsWith("redis://", StringComparison.OrdinalIgnoreCase))
+    {
+        redisConn = redisConn.Substring(8);
+    }
+    else if (redisConn.StartsWith("rediss://", StringComparison.OrdinalIgnoreCase))
+    {
+        // En caso use rediss:// (con SSL)
+        redisConn = redisConn.Substring(9) + ",ssl=True";
+    }
+
     builder.Services.AddStackExchangeRedisCache(options =>
     {
         options.Configuration = redisConn;
