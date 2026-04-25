@@ -35,17 +35,18 @@ Para actualizar la base de datos manualmente:
 dotnet ef database update
 ```
 
-## Variables de Entorno
+## Variables de Entorno (Producción - Render)
 
-Para el desarrollo local se usa la cadena de conexión en `appsettings.Development.json`.
-En producción (Render) se configurarán las siguientes variables de entorno:
+Para desplegar en Render como Web Service, debes configurar las siguientes variables de entorno:
 
-- `ConnectionStrings__DefaultConnection`: Cadena de conexión para la base de datos.
-- (Otras variables como `ConnectionStrings__RedisConnection` se agregarán en el futuro).
+- `ASPNETCORE_ENVIRONMENT`: `Production`
+- `ASPNETCORE_URLS`: `http://0.0.0.0:${PORT}`
+- `ConnectionStrings__DefaultConnection`: `DataSource=app.db;Cache=Shared` (o cadena de conexión si se usa otro motor de BD).
+- `Redis__ConnectionString`: Cadena de conexión provista por tu servidor Redis gestionado (ej. el Internal URL de Redis en Render).
 
 ## URL de Render
 
-*Pendiente de despliegue.*
+
 
 ## Usuarios Iniciales (Seeding)
 
