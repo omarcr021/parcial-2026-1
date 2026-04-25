@@ -1,0 +1,93 @@
+@model IEnumerable<parcial_2026_1.Models.SolicitudCredito>
+
+@{
+    ViewData["Title"] = "Panel de Analista";
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4">Panel de Analista - Solicitudes Pendientes</h2>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Fecha</th>
+                            <th>Cliente</th>
+                            <th>Ingresos</th>
+                            <th>Monto Solicitado</th>
+                            <th class="text-center" style="width: 350px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            var exceedsLimit = item.Cliente != null && item.MontoSolicitado > item.Cliente.IngresosMensuales * 5;
+
+                            <tr>
+                                <td><span class="fw-bold">#@item.Id</span></td>
+                                <td>@item.FechaSolicitud.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>@item.Cliente?.Usuario?.Email</td>
+                                <td>@item.Cliente?.IngresosMensuales.ToString("C")</td>
+                                <td>
+                                    <span class="@(exceedsLimit ? "text-danger fw-bold" : "")">@item.MontoSolicitado.ToString("C")</span>
+                                    @if (exceedsLimit)
+                                    {
+                                        <br /><small class="badge bg-danger">Excede 5x Ingresos</small>
+                                    }
+                                </td>
+                                <td>
+                                    <form asp-action="Evaluar" method="post" class="d-flex flex-column align-items-center">
+                                        <input type="hidden" name="SolicitudId" value="@item.Id" />
+                                        
+                                        <div class="w-100 mb-2">
+                                            <button type="submit" name="Accion" value="Aprobar" class="btn btn-sm btn-success w-100" @(exceedsLimit ? "disabled title='Monto excede el límite permitido'" : "")>
+                                                <i class="bi bi-check-circle"></i> Aprobar
+                                            </button>
+                                        </div>
+                                        
+                                        <div class="input-group input-group-sm w-100">
+                                            <input type="text" name="MotivoRechazo" class="form-control" placeholder="Motivo de rechazo" />
+                                            <button type="submit" name="Accion" value="Rechazar" class="btn btn-outline-danger">
+                                                Rechazar
+                                            </button>
+                                        </div>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                                    No hay solicitudes pendientes por evaluar.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
