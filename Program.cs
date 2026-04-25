@@ -10,7 +10,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-var redisConn = builder.Configuration.GetConnectionString("RedisConnection");
+var redisConn = builder.Configuration["Redis:ConnectionString"] ?? builder.Configuration.GetConnectionString("RedisConnection");
 if (!string.IsNullOrEmpty(redisConn))
 {
     builder.Services.AddStackExchangeRedisCache(options =>
