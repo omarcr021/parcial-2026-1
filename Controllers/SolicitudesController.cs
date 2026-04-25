@@ -2,6 +2,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using Microsoft.Extensions.Caching.Distributed;
 using parcial_2026_1.Data;
 using parcial_2026_1.Models;
 using parcial_2026_1.Models.ViewModels;
@@ -9,7 +12,7 @@ using parcial_2026_1.Models.ViewModels;
 namespace parcial_2026_1.Controllers;
 
 [Authorize]
-public class SolicitudesController(ApplicationDbContext context, UserManager<IdentityUser> userManager) : Controller
+public class SolicitudesController(ApplicationDbContext context, UserManager<IdentityUser> userManager, IDistributedCache cache) : Controller
 {
     public async Task<IActionResult> Index(MisSolicitudesViewModel model)
     {
@@ -28,10 +31,32 @@ public class SolicitudesController(ApplicationDbContext context, UserManager<Ide
             return View(model);
         }
 
-        var query = context.SolicitudesCredito
-            .Include(s => s.Cliente)
-            .Where(s => s.ClienteId == cliente.Id)
-            .AsQueryable();
+        var cacheKey = $"solicitudes_usuario_{user.Id}";
+        string? cachedData = await cache.GetStringAsync(cacheKey);
+        
+        List<SolicitudCredito> baseList;
+        var jsonOptions = new JsonSerializerOptions { ReferenceHandler = ReferenceHandler.IgnoreCycles };
+
+        if (string.IsNullOrEmpty(cachedData))
+        {
+            baseList = await context.SolicitudesCredito
+                .Where(s => s.ClienteId == cliente.Id)
+                .OrderByDescending(s => s.FechaSolicitud)
+                .ToListAsync();
+
+            var cacheOptions = new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(60)
+            };
+            
+            await cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(baseList, jsonOptions), cacheOptions);
+        }
+        else
+        {
+            baseList = JsonSerializer.Deserialize<List<SolicitudCredito>>(cachedData, jsonOptions) ?? new List<SolicitudCredito>();
+        }
+
+        var query = baseList.AsQueryable();
 
         if (model.Estado.HasValue)
         {
@@ -58,7 +83,7 @@ public class SolicitudesController(ApplicationDbContext context, UserManager<Ide
             query = query.Where(s => s.FechaSolicitud.Date <= model.FechaFin.Value.Date);
         }
 
-        model.Solicitudes = await query.OrderByDescending(s => s.FechaSolicitud).ToListAsync();
+        model.Solicitudes = query.ToList();
 
         return View(model);
     }
@@ -133,6 +158,9 @@ public class SolicitudesController(ApplicationDbContext context, UserManager<Ide
         context.SolicitudesCredito.Add(nuevaSolicitud);
         await context.SaveChangesAsync();
 
+        // Invalidar caché
+        await cache.RemoveAsync($"solicitudes_usuario_{user.Id}");
+
         ViewBag.SuccessMessage = "La solicitud de crédito ha sido registrada exitosamente y se encuentra en estado Pendiente.";
         ModelState.Clear(); // Limpiamos para el form vacío
 
@@ -154,6 +182,10 @@ public class SolicitudesController(ApplicationDbContext context, UserManager<Ide
         {
             return Forbid();
         }
+
+        // Guardar última solicitud en sesión
+        HttpContext.Session.SetString("UltimaSolicitudInfo", $"Ver última solicitud ({solicitud.MontoSolicitado:C})");
+        HttpContext.Session.SetInt32("UltimaSolicitudId", solicitud.Id);
 
         return View(solicitud);
     }
