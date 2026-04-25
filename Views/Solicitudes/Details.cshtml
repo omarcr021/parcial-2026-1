@@ -1,0 +1,52 @@
+@model parcial_2026_1.Models.SolicitudCredito
+@using parcial_2026_1.Models
+
+@{
+    ViewData["Title"] = "Detalle de Solicitud";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Solicitud #@Model.Id</h4>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">Fecha de Solicitud</dt>
+                        <dd class="col-sm-8">@Model.FechaSolicitud.ToString("dd/MM/yyyy HH:mm")</dd>
+
+                        <dt class="col-sm-4">Monto Solicitado</dt>
+                        <dd class="col-sm-8">@Model.MontoSolicitado.ToString("C")</dd>
+
+                        <dt class="col-sm-4">Estado</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.Estado == EstadoSolicitud.Pendiente)
+                            {
+                                <span class="badge bg-warning text-dark fs-6">Pendiente</span>
+                            }
+                            else if (Model.Estado == EstadoSolicitud.Aprobado)
+                            {
+                                <span class="badge bg-success fs-6">Aprobado</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger fs-6">Rechazado</span>
+                            }
+                        </dd>
+
+                        @if (Model.Estado == EstadoSolicitud.Rechazado && !string.IsNullOrEmpty(Model.MotivoRechazo))
+                        {
+                            <dt class="col-sm-4 text-danger">Motivo de Rechazo</dt>
+                            <dd class="col-sm-8 text-danger">@Model.MotivoRechazo</dd>
+                        }
+                    </dl>
+                </div>
+                <div class="card-footer text-end">
+                    <a asp-action="Index" class="btn btn-secondary">Volver al listado</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
